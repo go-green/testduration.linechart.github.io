@@ -1,0 +1,131 @@
+﻿@model  TestDuration.LineChart.Models.TestResults.ChartModel
+<html>
+<head>
+    <link rel="stylesheet" href="~/css/sumoselect.css" />
+    <script type="text/javascript" src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script type="text/javascript" src="~/lib/sumoselect/jquery.sumoselect.js"></script>
+    <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+    <script type="text/javascript">
+        function FillDropDown(destIdentifier, controller) {
+            var destId = "#" + destIdentifier;
+            var con = "Home/" + controller;
+            $.ajax({
+                url: con,
+                type: "GET",
+                data: GetUserSelectedValues(),
+                success: function (items) {
+                    $(destId).empty();
+                    ClearDropDown(destId);
+                    $.each(items, function (i, item) {
+                        $(destId)[0].sumo.add(item.id, item.name);
+                    })
+                },
+                error: function (xhr, error) {
+                    console.debug(xhr); console.debug(error);
+                }
+            });
+        }
+        function GetUserSelectedValues() {
+            var userSelection = new Object();
+            userSelection.project = $("#Build_SelectedProject").val();
+            userSelection.buildConfig = $("#Build_SelectedBuildConfiguration").val();
+            userSelection.branch = $("#Build_SelectedBranch").val();
+            userSelection.buildCount = $("#Build_BuildCount").val();
+            userSelection.tests = $("#Build_SelectedTests").val();
+            return userSelection
+        }
+        function ClearDropDown(Id) {
+            $(Id).html('');
+            $(Id)[0].sumo.reload();
+        }
+        function SubmitTheForm(Id) {
+            Preloader(true);
+            var sourceId = "#" + Id;
+            var selectedTestNames = $(sourceId).val();
+            var con = "Home/Index";
+            $.ajax({
+                url: con,
+                type: "POST",
+                dataType: "JSON",
+                traditional: true,
+                data: GetUserSelectedValues(),
+                success: function (chartModel) {
+                    PlotTheGraph(chartModel);
+                },
+                error: function (xhr, error) {
+                    console.debug(xhr); console.debug(error);
+                }
+            });
+        }
+        function PlotTheGraph(chartModel) {
+            google.charts.load('current', { 'packages': ['corechart', 'line'] });
+            google.charts.setOnLoadCallback(function () {
+                var title = chartModel.chartName;
+                var subtitle = chartModel.chartSubTitle;
+                var dataTable = new google.visualization.DataTable(chartModel.dataTable);
+                drawLineChart('graph', title, subtitle, dataTable);
+            });
+        }
+        function drawLineChart(elementId, title, subtitle, dataTable) {
+            var options = {
+                chart: {
+                    title: title,
+                    subtitle: subtitle
+                },
+                legend: { textStyle: { fontSize: 14 } },
+                width: 1700,
+                height: 750,
+                vAxis: { title: "Test time in milliseconds" },
+                hAxis: { title: "Build Numbers" }
+            };
+            var chart = new google.charts.Line(document.getElementById(elementId));
+            chart.draw(dataTable, google.charts.Line.convertOptions(options));
+        }
+        function Preloader(showPreloader)
+        { 
+            if (showPreloader)
+            {
+                $("#graph").html('');
+                $("#graph").append("<div class='preloader'>&nbsp;</div>");
+            }
+        }
+    </script>
+</head>
+<body>
+    <form method="post">
+        <table class="fontSize">
+            <tr>
+                <td>
+                    @Html.DropDownListFor(x => x.Build.SelectedProject, new SelectList(Model.Build.Projects, "Id", "Name"),
+                    new { @onchange = "FillDropDown('Build_SelectedBuildConfiguration','FillBuildConfigurations')", tabindex = "0", size = "25", @class = "ProjectNames SumoUnder" })
+                </td>
+                <td>
+                    @Html.DropDownListFor(x => x.Build.SelectedBuildConfiguration, new SelectList(Enumerable.Empty<SelectListItem>(), "Id", "Name"),
+                    new { @onchange = "FillDropDown('Build_SelectedBranch','FillBranches')", tabindex = "1", @class = "BuildConfigurations SumoUnder" })
+                </td>
+                <td>
+                    @Html.DropDownListFor(x => x.Build.SelectedBranch, new SelectList(Enumerable.Empty<SelectListItem>(), "Name", "Name"),
+                    new { @onchange = "FillDropDown('Build_SelectedTests','FillTests')", tabindex = "2", @class = "BranchNames SumoUnder" })
+                </td>
+                <td class="fontSize">
+                    @Html.TextBoxFor(x => x.Build.BuildCount, new { @min = "1", @max = "100", @type = "number",@Value = "25", tabindex = "3", @class = "SumoSubmit" })
+                </td>
+                <td>
+                    @Html.ListBoxFor(x => x.Build.SelectedTests, new MultiSelectList(Enumerable.Empty<SelectListItem>()),
+                    new { @onchange = "SubmitTheForm(this.id)", multiple = "multiple", tabindex = "4", @class = "TestNameList SumoUnder" })
+                </td>
+            </tr>
+        </table>
+    </form>
+    <div id="graph">
+    </div>
+    <script type="text/javascript">
+        $(document).ready(function () {
+            $('.ProjectNames').SumoSelect({ search: true, placeholder: 'Select a project..' });
+            $('.BuildConfigurations').SumoSelect({ search: true, placeholder: 'Select a BuildConfiguration..', floatWidth: 450 });
+            $('.BranchNames').SumoSelect({ search: true, placeholder: 'Select a branch..', floatWidth: 500 });
+            $('.TestNameList').SumoSelect({ placeholder: 'Select Test(s) here..', floatWidth: 700, okCancelInMulti: true, search: true });
+        });
+    </script>
+</body>
+</html>
