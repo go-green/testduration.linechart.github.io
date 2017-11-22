@@ -15,4 +15,6 @@ The user is able to select Team City Project > Build Configuration > Branch > Nu
 # Feel free to extend
 The current implementation uses Team City as the data source. Feel free to extend the app for other repositories like Jenkins and MS Team Services. You need to implement a handler for your CI server using IChartDataHandler, IUrlBuilder and IBuildFilterOptions interfaces. Then change the data source in appsettings.json file and Initialise your handler in ChartDataHandlerFactory.cs file.
 
-Reference : https://blog.cinlogic.com/2016/02/26/visualize-data-using-google-charts-and-aspnet-mvc/
+Reference : 
+
+Pursley, B. (2016,02,16). Visualize Data Using Google Charts and ASP.NET MVC. Retrieved from https://blog.cinlogic.com/2016/02/26/visualize-data-using-google-charts-and-aspnet-mvc/
